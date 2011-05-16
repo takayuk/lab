@@ -14,18 +14,18 @@ HTTP_PROXY = 'http://cache.st.ryukoku.ac.jp:8080/'
 # リクエストURIの生成.
 #
 def new_request(method_name, arg_map = {}.freeze)
-	begin
-		args = arg_map.collect{|k, v| CGI.escape(k) << '=' << CGI.escape(v)}.join('&')
+  begin
+    args = arg_map.collect{|k, v| CGI.escape(k) << '=' << CGI.escape(v)}.join('&')
 
-		request_url = "http://www.flickr.com/services/rest/?api_key=%s&method=%s&%s" %
-		[FLICKR_API_KEY, method_name, args]
+    request_url = "http://www.flickr.com/services/rest/?api_key=%s&method=%s&%s" %
+    [FLICKR_API_KEY, method_name, args]
 
-		return REXML::Document.new(open(request_url, :proxy=>HTTP_PROXY))
-	rescue
+    return REXML::Document.new(open(request_url, :proxy=>HTTP_PROXY))
+  rescue
 
-		STDERR.puts "LOCAL WARNINGS: #{$!}"
-		return nil
-	end
+    STDERR.puts "LOCAL WARNINGS: #{$!}"
+    return nil
+  end
 end
 
 
