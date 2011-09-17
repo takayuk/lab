@@ -83,22 +83,29 @@ if __name__ == '__main__':
     #output_dir = sys.argv[2]
 
     #path_list = glob.glob('expdata/1st/*.json')
-    path_list = glob.glob('%s/*.json' % basedir)
+    #path_list = glob.glob('%s/*.json' % basedir)
+    argslist = [ os.path.basename(path).split('.')[0] for path in glob.glob('%s/*.json' % basedir) ]
 
+    """
     names = []
     for i, path in enumerate(path_list):
         names += json.load(open(path))
         print(i)
+    """
 
     """
     checked_list = [ os.path.basename(path).split('.')[0] for path in path_list ]
     checked_table = dict(zip(checked_list, [1] * len(checked_list)))
     """
    
-    argslist = list(set(names))
+    #argslist = list(set(names))
+    print(len(argslist))
 
     method = sys.argv[3]
+    bot = Snapbot(method, argslist, numof_thread = int(sys.argv[4]), output_dir = sys.argv[2])
+    bot.run()
 
+    '''
     for path in path_list:
         
         #data = json.load(open(path))
@@ -118,7 +125,7 @@ if __name__ == '__main__':
         """
         
         del(bot)
-    
+    '''
 
     """
     _api = flickr_callapi.FlickrAPI()
