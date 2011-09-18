@@ -1,0 +1,151 @@
+# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+
+class Trie:
+    """ Trie-tree for text search.
+    """
+
+    class Node:
+
+        def __init__(self, x, bros = None, child = None):
+
+            self.data = x
+            self.bros = bros
+            self.child = child
+
+            self.ids = []
+
+        #def set_child(self, x):
+        def set_child(self, x, id):
+            child = Trie.Node(x, self.child)
+            self.child = child
+
+            # Added...
+            self.ids.append(id)
+            
+            return child
+
+        def get_child(self, x):
+
+            child = self.child
+            while child:
+                if child.data == x: break
+                child = child.bros
+            return child
+
+        """
+        def del_child(self, x):
+            child = self.child
+            if child.data == x:
+                self.child = child.bros
+                return True
+            else:
+                while child.bros:
+                    if child.bros.data == x:
+                        child.bros = child.bros.bros
+                        return True
+                    child = child.bros
+                return False
+        """
+        def traverse(self, leaf):
+            if self.data == leaf:
+                yield []
+            else:
+                child = self.child
+                while child:
+                    for x in child.traverse(leaf):
+                        yield [ self.data ] + x
+                    child = child.bros
+
+
+    def __init__(self, x = None):
+        self.root = Trie.Node(None)
+        self.leaf = x
+
+    def search(self, seq):
+        node = self.root
+        for x in seq:
+            node = node.get_child(x)
+            if node is None: return False
+
+        search_result = []
+        a = node.get_child(self.leaf)
+        search_result += a.ids
+        return search_result
+        #return node.get_child(self.leaf) is not None
+
+    def insert(self, seq, id):
+        # Rootから 
+        node = self.root
+        for x in seq:
+            child = node.get_child(x)
+            #child = node.get_child(x, id)
+            if not child:
+                child = node.set_child(x)
+                #child = node.set_child(x, id)
+            node = child
+
+            if not node.get_child(self.leaf):
+            #if not node.get_child(self.leaf, id):
+                node.set_child(self.leaf)
+                #node.set_child(self.leaf, id)
+
+    """
+    def delete(self, seq):
+        node = self.root
+        for x in seq:
+            node = node.get_child(x)
+            if not node: return False
+        return node.del_child(self.leaf)
+    """
+    
+    def traverse(self):
+        node = self.root.child
+        while node:
+            for x in node.traverse(self.leaf):
+                yield x
+            node = node.bros
+
+    """
+    def common_prefix(self, seq):
+        node = self.root
+        buff = []
+        for x in seq:
+            buff.append(x)
+            node = node.get_child(x)
+            if not node: return
+        node = node.child
+        while node:
+            for x in node.traverse(self.leaf):
+                yield buff + x
+            node = node.bros
+    """
+
+if __name__ == '__main__':
+
+    def make_suffix_trie(seq):
+        a = Trie()
+
+        for j, doc in enumerate(seq):
+            print(doc)
+            for x in range(len(doc)):
+                a.insert(doc[x:], j+1)
+        return a
+
+    #s = make_suffix_trie(['abcabbca', 'xxxxfdaj', 'ajljfewa'])
+    s = make_suffix_trie(['abca'])
+
+    for x in s.traverse():
+        print(x)
+    
+    for x in ['a', 'bc', 'x', 'ab', 'xxxxfdaj']:
+        #print(x)
+        r = s.search(x)
+        #print(r)
+        """
+        for y in s.common_prefix(x):
+            print(y)
+
+        """
+
