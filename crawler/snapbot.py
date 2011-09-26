@@ -86,6 +86,14 @@ if __name__ == '__main__':
     #path_list = glob.glob('%s/*.json' % basedir)
     argslist = [ os.path.basename(path).split('.')[0] for path in glob.glob('%s/*.json' % basedir) ]
 
+    with file('/home/takayuk/dataset/expdata/set1/set1_0915_bi.lbl') as opened:
+        for line in opened:
+            urlid += [ int(l) for l in line.strip().split() ]
+
+    urlid = list(set(urlid))
+    print(len(urlid))
+    exit()
+
     """
     names = []
     for i, path in enumerate(path_list):
