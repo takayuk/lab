@@ -4,7 +4,9 @@
 #include <algorithm>
 
 #include <cstdio>
-
+#include <fstream>
+#include <sstream>
+#include <iostream>
 
 using namespace std;
 
@@ -76,13 +78,47 @@ class Trie {
       g.push_back(Element(Node(keys[keys.size()-1], true)));
     }
 
+
     bool search(const vector<int>& query) {
 
-      int term = query[0];
+      //vector<Element>::iterator i = g.begin();
       
-      vector<Element>::iterator i = g.begin();
-      
-      vector<Node>::iterator current_node = g.end()->child.end();
+      //vector<Node>::iterator current_node = g.end()->child.end();
+
+      vector<Node>::iterator find_result;
+
+      /**/
+      for (int k = 0; k < query.size()-1; ++k) {
+
+        //i = g.begin();
+        for (vector<Element>::iterator i = g.begin(); i != g.end(); ++i) {
+
+        //vector<Element>::iterator i = g.begin();
+        //while (i != g.end()) {
+          if (i->node.label == query[k]) {
+            printf("F\n");
+            find_result = find(i->child.begin(), i->child.end(), query[k+1]);
+            //if (find_result == i->child.end()) {
+            if (k < query.size()-1 && find_result == i->child.end()) {
+              return false;
+            }
+          }
+
+          //find_result = find(i->child.begin(), i->child.end(), query[k]);
+          //find_result = find(i->child.begin(), i->child.end(), query[k+1]);
+          /*
+          if (find_result != i->child.end()) {
+            current_node = find_result;
+            break;
+          }
+          else {}
+          */
+          //++i;
+        }
+        //find_result = find(i->child.begin(), i->child.end(), query[k+1]);
+      }
+      return true;
+      /**
 
       vector<Node>::iterator find_result;
       while (i != g.end()) {
@@ -96,74 +132,102 @@ class Trie {
         ++i;
       }
 
-      if (current_node == g.end()->child.end()) { return false; }
+      if (current_node == g.end()->child.end()) {
+        found = false;
+      }
+      else {
 
-      for (int k = 1; k < query.size(); ++k) {
+        for (int k = 1; k < query.size(); ++k) {
 
-        i = g.begin();
-        while (i != g.end()) {
-          find_result = find(i->child.begin(), i->child.end(), query[k]);
-          if (find_result != i->child.end()) {
-            current_node = find_result;
-            break;
+          i = g.begin();
+          while (i != g.end()) {
+            find_result = find(i->child.begin(), i->child.end(), query[k]);
+            if (find_result != i->child.end()) {
+              current_node = find_result;
+              break;
+            }
+            ++i;
           }
-          ++i;
+        }
+        if (i != g.end()) {
+          found = true;
+        }
+        else {
+          found = false;
         }
       }
-      if (i != g.end()) {
-        printf("Found.\n");
-        return true;
+
+      if (found) {
+        printf("Query is found.\n\n");
       }
-      return false;
+      else {
+        printf("Query is NOT found.\n\n");
+      }
+      **/
+      //return found;
     }
 };
 
 
+bool read(const string& file_path, vector< vector<int> >& dataset) {
+
+  ifstream ifs(file_path.c_str());
+
+  string buffer;
+  int doc_j = 0;
+
+  while (ifs && getline(ifs, buffer)) {
+
+    dataset.push_back(vector<int>());
+
+    stringstream ss(buffer);
+    int id;
+    
+    while (ss >> id) {
+      dataset[doc_j].push_back(id);
+    }
+    ++doc_j;
+  }
+
+  return true;
+}
+
+
 int main(int argc, char* argv[]) {
+
+  vector< vector<int> > dataset;
+  read(argv[1], dataset);
+
+  for (vector< vector<int> >::iterator i = dataset.begin(); i != dataset.end(); ++i) {
+    for (vector<int>::iterator j = i->begin(); j != i->end(); ++j) {
+      cout << *j << " ";
+    }
+    cout << endl;
+  }
 
   Trie trie;
 
-  vector<int> keys;
-  keys.push_back(1);
-  keys.push_back(2);
-  keys.push_back(3);
-  
-  trie.build(keys);
-
-  keys.clear();
-  keys.push_back(1);
-  keys.push_back(4);
-  keys.push_back(5);
-  keys.push_back(6);
-  
-  trie.build(keys);
-
-  //printf("%d\n", trie.g.size());
-
-  for (int i = 0; i < trie.g.size(); ++i) {
-
-    printf("%d\n", trie.g[i].node.label);
-    for (vector<Node>::iterator it = trie.g[i].child.begin(); it != trie.g[i].child.end(); ++it) {
-      printf("%d ", it->label);
-    }
-    printf("\n\n");
+  for (vector< vector<int> >::iterator i = dataset.begin(); i != dataset.end(); ++i) {
+    trie.build(*i);
   }
 
   vector<int> query;
   query.push_back(2);
-  query.push_back(3);
-
-  trie.search(query);
-
-  query.clear();
-  query.push_back(-1);
-  trie.search(query);
-  
-  query.clear();
   query.push_back(4);
-  query.push_back(5);
-  trie.search(query);
- 
+
+  const bool result = trie.search(query);
+  if (result) { printf("Found.\n"); }
+  else { printf("Not found.\n"); }
+
+  query.clear();
+  query.push_back(26);
+  query.push_back(12);
+  query.push_back(13);
+  
+  if (result) { printf("Found.\n"); }
+  else { printf("Not found.\n"); }
+
+
   return 0;
 }
 
