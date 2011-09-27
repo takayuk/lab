@@ -16,7 +16,8 @@ class FlickrAPI:
         self.method_map = {
             'flickr.people.getPublicGroups': self.people_getpublicgroups,
             'flickr.contacts.getPublicList': self.contacts_get_public_list,
-            'flickr.favorites.getPublicList': self.favorites_getpubliclist
+            'flickr.favorites.getPublicList': self.favorites_getpubliclist,
+            'flickr.groups.pools.getPhotos': self.groups_pools_getphotos,
         }
         self.query_template = { 'format': 'json', 'nojsoncallback': '1' }
         
@@ -39,6 +40,50 @@ class FlickrAPI:
 
         call_method = self.method_map[method]
         return call_method(args)
+    
+    
+    def groups_pools_getphotos(self, args):
+
+        import copy
+        query = copy.copy(self.query_template)
+
+        for k, v in args.items():
+            query.setdefault(k, str(v))
+
+        local_args = { 'perpage': '500', 'page': '1' }
+
+        for k, v in local_args.items():
+            if not k in query:
+                query.setdefault(k, str(v))
+        
+        result = []
+
+        page = 1
+        totalpage = None
+
+        while True:
+            try:
+                response = self.request('flickr.groups.pools.getPhotos', query)
+                result += [ (item['id'], item['owner']) for item in response['photos']['photo'] ]
+
+                if not totalpage:
+                    totalpage = int(response['photos']['pages'])
+
+            except KeyError:
+                return []
+            except ValueError:
+                return []
+
+            page += 1
+
+            if page <= totalpage:
+                query['page'] = str(page)
+            else:
+                break
+        
+        return list(set(result))
+
+
 
 
     def people_getpublicgroups(self, args):

@@ -16,7 +16,7 @@ import glob
 class Worker(threading.Thread):
     """ スレッド化されたBot本体.
     """
-    def __init__(self, args_sem, args_list, api, output_dir):
+    def __init__(self, args_sem, args_list, api, method, output_dir):
 
         threading.Thread.__init__(self)
         self.setDaemon(True)
@@ -27,6 +27,7 @@ class Worker(threading.Thread):
         self.api = api
 
         self.basedir = output_dir
+        self.method = method
 
     def _new_args(self):
 
@@ -42,15 +43,18 @@ class Worker(threading.Thread):
 
             args = self._new_args()
 
-            response = self.api.call(method = 'flickr.contacts.getPublicList', args = { 'user_id': args })
+            #response = self.api.call(method = 'flickr.contacts.getPublicList', args = { 'user_id': args })
+            #response = self.api.call(method = self.method, args = { 'user_id': args })
+            response = self.api.call(method = self.method, args = { 'user_id': args[0], 'group_id': args[1] })
 
             time.sleep(0.1)
 
             #with file('1st/%s.json' % args, 'w') as f:
-            with file(os.path.join(self.basedir, '%s.json' % args), 'w') as opened:
+            with file(os.path.join(self.basedir, '%s-%s.json' % (args)), 'w') as opened:
             #with file('expdata/2nd/%s.json' % args, 'w') as f:
                 #f.write(json.dumps(response))
                 opened.write(json.dumps(response))
+            print(args)
 
 
 class Snapbot():
@@ -67,7 +71,7 @@ class Snapbot():
 
         self.workers = []
         for i in range(numof_thread):
-            worker = Worker(self.args_sem, self.argslist, self.api, output_dir)
+            worker = Worker(self.args_sem, self.argslist, self.api, method, output_dir)
             self.workers.append(worker)
             worker.start()
 
@@ -79,20 +83,21 @@ class Snapbot():
 
 if __name__ == '__main__':
 
-    basedir = sys.argv[1]
+    #basedir = sys.argv[1]
     #output_dir = sys.argv[2]
 
     #path_list = glob.glob('expdata/1st/*.json')
     #path_list = glob.glob('%s/*.json' % basedir)
-    argslist = [ os.path.basename(path).split('.')[0] for path in glob.glob('%s/*.json' % basedir) ]
+    #argslist = [ l.strip().split()[2] for l in open(sys.argv[1]) ]
+    namelist = [ l.strip().split()[2] for l in open(sys.argv[1]) ]
+    argslist = []
+    for name in namelist:
+        groups = json.load(open('/home/takayuk/dataset/expdata/dataset/set1/groups_all_0-2/%s.json' % name))
+        groups = [ group[0] for group in groups ]
+        argslist += [ (name, group) for group in groups ]
 
-    with file('/home/takayuk/dataset/expdata/set1/set1_0915_bi.lbl') as opened:
-        for line in opened:
-            urlid += [ int(l) for l in line.strip().split() ]
 
-    urlid = list(set(urlid))
-    print(len(urlid))
-    exit()
+    #argslist = [ os.path.basename(path).split('.')[0] for path in glob.glob('%s/*.json' % basedir) ]
 
     """
     names = []
@@ -110,6 +115,7 @@ if __name__ == '__main__':
     print(len(argslist))
 
     method = sys.argv[3]
+    #bot = Snapbot(method, argslist, numof_thread = int(sys.argv[4]), output_dir = sys.argv[2])
     bot = Snapbot(method, argslist, numof_thread = int(sys.argv[4]), output_dir = sys.argv[2])
     bot.run()
 
