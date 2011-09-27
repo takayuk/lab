@@ -21,7 +21,10 @@ def load_file(filename):
 
     with file(filename) as opened:
 
-        for line in opened:
+        for j, line in enumerate(opened):
+            if j == 0:
+                continue
+
             terms = []
             for word in line.strip().split():
 
