@@ -308,9 +308,12 @@ if __name__ == "__main__":
     
     import vocabulary
 
-    #corpus = vocabulary.load_file(options.filename)
-    corpus = vocabulary.load_file_json(options.filename)
-    
+    if options.filename.split()[-1] == 'json':
+        corpus = vocabulary.load_file_json(options.filename)
+    else:
+        corpus = vocabulary.load_file(options.filename)
+
+
     voca = vocabulary.Vocabulary(options.stopwords==0)
     docs = [voca.doc_to_ids(doc) for doc in corpus]
 
