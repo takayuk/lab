@@ -26,7 +26,7 @@ def load_file(filename):
                 continue
 
             terms = []
-            for word in line.strip().split():
+            for word in line.strip().split()[1:]:
 
                 tf = word.split(':')
                 terms += [ int(tf[0]) ] * int(tf[1])
