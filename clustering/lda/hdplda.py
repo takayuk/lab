@@ -66,7 +66,9 @@ class HDPLDA:
                 self.sampling_k(j, t)
 
     def worddist(self):
-        return [(self.n_kv[k] + self.base) / (self.n_k[k] + self.Vbase) for k in self.topics]
+        dist = numpy.array([(self.n_kv[k] + self.base) / (self.n_k[k] + self.Vbase) for k in self.topics])
+        dist /= dist.sum()
+        return dist
 
     
     # internal methods from here
@@ -333,7 +335,7 @@ if __name__ == "__main__":
     with file(options.output, 'w') as opened:
 
         for id in range(voca.size()):
-            term = voca.id_to_term(id)
+            #term = voca.id_to_term(id)
             buf = ' '.join([ str(phi_k[id]) for phi_k in phi ])
-            opened.write('%s %s\n' % (term, buf))
+            opened.write('%s\n' % buf)
 
