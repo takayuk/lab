@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-""" Implementation of Mean-shift Clustering.
 """
-
+    Implementation of Mean-shift Clustering.
+"""
 
 from multiprocessing import Process, Array
 
@@ -136,6 +136,7 @@ if __name__ == '__main__':
 
     (options, args) = args()
 
+    # Read dataset or Make artifical dataset.
     if options.input_path:
         data = [ line.strip().split() for line in open(options.input_path).readlines() ]
         for i in range(len(data)):
@@ -144,6 +145,7 @@ if __name__ == '__main__':
         data = dataset(seqsize = 6000, K = 50)
 
 
+    # Deployment for each process and Running.
     K = len(data[0])
     if options.numof_procs > 1:
 
@@ -157,11 +159,13 @@ if __name__ == '__main__':
         table = meanshift(data)
 
 
+    # Formatting results.
     results = []
     for i in range(len(data)):
         results.append( tuple([ table[(i*2) + k] for k in range(K) ]) )
 
 
+    # Merging cluster using merge threshold.
     cluster_table = {}
     for i in range(len(results)):
 
@@ -179,6 +183,8 @@ if __name__ == '__main__':
             cluster_table[len(cluster_table)] = [ results[i], (i, data[i]) ]
 
 
+    # Writing results to file.
     with file(options.output_path, 'w') as opened:
         opened.write(json.dumps(cluster_table))
-        
+
+
