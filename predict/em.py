@@ -60,7 +60,6 @@ if __name__ == '__main__':
     beta = numpy.random.random_sample(size = K)
     beta /= beta.sum()
 
-    #T = 0.0001
     T = 0.00001
    
     n_z = []
@@ -74,7 +73,6 @@ if __name__ == '__main__':
     nodes = []
     linklist = []
     while True:
-        #graph = networkx.Graph()
         linklist[:] = []
         nodes[:] = []
 
@@ -86,20 +84,14 @@ if __name__ == '__main__':
                     linklist.append((i, j))
                     nodes += [i, j]
 
-                    #graph.add_edge(i, j)
-
         linkrate = float(len(linklist) * 2) / float(N * (N-1))
 
         if linkrate > LINK_RATE:
-            #T += 0.0002
             T += 0.00002
-            #del(graph)
         else:
             nodes = list(set(nodes))
             break
 
-    #networkx.draw_spring(graph)
-    #plt.savefig('graph.png')
 
     N_train = int(float(len(linklist)) * TRAIN_RATE)
     train = random.sample(linklist, N_train)
@@ -148,13 +140,17 @@ if __name__ == '__main__':
         if q < EM_EPS: break
 
         
-    sim = similarity.cosine(_beta, beta)
-    #print(sim)
+    #sim = similarity.cosine(_beta, beta)
+    sim = similarity.kldivergence(beta, _beta)
+    print(sim)
 
+    # Laplace smoothing.
     _beta += 0.5
     _beta /= _beta.sum()
-    sim_geta = similarity.cosine(_beta, beta)
-    #print(sim_geta)
+    
+    #sim_geta = similarity.cosine(_beta, beta)
+    sim_geta = similarity.kldivergence(beta, _beta)
+    print(sim_geta)
 
     
     pos_pred = []
@@ -170,23 +166,9 @@ if __name__ == '__main__':
             else:
                 neg_pred.append(link_prob)
 
-    """
-    pos_data = [ [p] for p in pos_pred ]
-    neg_data = [ [n] for n in neg_pred ]
+    estimated_threshold = math.fabs(T + ((max(neg_pred) - min(pos_pred))/2.0))
+    print(estimated_threshold)
 
-    label = []
-    label += [1] * len(pos_data)
-    label += [-1] * len(neg_data)
-    #data = [ pos_data, neg_data ]
-    data = []
-    data += pos_data
-    data += neg_data
-    
-    prob = svm_problem(label, data)
-    param = svm_parameter('-t 0 -c 3')
-
-    svm_t = svm_train(prob, param)
-    """
 
     if not os.path.exists(options.output_path):
         print('File Not Found.')
@@ -208,38 +190,4 @@ if __name__ == '__main__':
         opened.write(json.dumps(data))
         opened.write('\n')
 
-        """
-        opened.write('N %d\n' % N)
-        opened.write('K %d\n' % K)
-        opened.write('L %f\n' % LINK_RATE)
-        opened.write('S %f\n' % options.rseed)
-        opened.write('LinkList %d\n' % len(linklist))
-        opened.write('Train %d\n' % len(train))
-        opened.write('Sim %f\n' % sim)
-        opened.write('SimGeta %f\n' % sim_geta)
-        opened.write('TrueThresh %f\n' % T)
-        opened.write('PredThresh %f\n' % math.fabs(T + ((max(neg_pred) - min(pos_pred))/2.0)))
-        opened.write('---\n')
-        """
-    """
-    test_data = list(numpy.arange(-0.5, 0.5, step = 0.01))
-    t_data = [[T+d] for d in test_data]
-
-    test_label = [0] * len(t_data)
-    #svm_predict([-1], [T + test_data[0]], svm_t)
-    label = svm_predict(test_label, t_data, svm_t)
-    #predicted_T = None
-    for i, l in enumerate(label[0]):
-        if l > 0:
-            #predicted_T = (test_data[i] - test_data[i-1]) / 2.0
-            #predicted_T = test_data[i]
-            predicted_T = t_data[i]
-            print(predicted_T)
-            break
-    #print(predicted_T)
-    """
-    """
-    for r in numpy.arange(-1, 1, step = 0.01):
-        print(svm_predict([-1], [T+r], svm_t))
-    """
 

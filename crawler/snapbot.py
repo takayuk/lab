@@ -94,7 +94,12 @@ if __name__ == '__main__':
     for name in namelist:
         groups = json.load(open('/home/takayuk/dataset/expdata/dataset/set1/groups_all_0-2/%s.json' % name))
         groups = [ group[0] for group in groups ]
-        argslist += [ (name, group) for group in groups ]
+
+        for group in groups:
+            if not os.path.exists('%s/%s-%s.json' % (sys.argv[2], name, group)):
+                argslist.append((name, group))
+        #argslist += [ (name, group) for group in groups if not os.path.exists('%s/%s-%s.json' % (sys.argv[2], name, groups)) ]
+        #argslist += [ (name, group) for group in groups ]
 
 
     #argslist = [ os.path.basename(path).split('.')[0] for path in glob.glob('%s/*.json' % basedir) ]

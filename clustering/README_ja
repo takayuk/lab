@@ -1,0 +1,9 @@
+
+以下のパッケージが利用できます.
+
+HDP-LDA
+lda/hdplda.py
+
+Mean-shift
+meanshift/python/meanshift.py
+
