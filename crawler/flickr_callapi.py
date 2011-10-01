@@ -14,10 +14,12 @@ class FlickrAPI:
     def __init__(self, api_key = 'flickr_api'):
 
         self.method_map = {
+            'flickr.people.getPublicPhotos': self.people_getpublicphotos,
             'flickr.people.getPublicGroups': self.people_getpublicgroups,
-            'flickr.contacts.getPublicList': self.contacts_get_public_list,
+            'flickr.contacts.getPublicList': self.contacts_getpubliclist,
             'flickr.favorites.getPublicList': self.favorites_getpubliclist,
             'flickr.groups.pools.getPhotos': self.groups_pools_getphotos,
+            'flickr.photos.comments.getList': self.photos_comments_getlist,
         }
         self.query_template = { 'format': 'json', 'nojsoncallback': '1' }
         
@@ -41,7 +43,31 @@ class FlickrAPI:
         call_method = self.method_map[method]
         return call_method(args)
     
-    
+        
+    def photos_comments_getlist(self, args):
+        
+        import copy
+        query = copy.copy(self.query_template)
+
+        for k, v in args.items():
+            query.setdefault(k, str(v))
+
+        result = []
+
+        try:
+            response = self.request('flickr.photos.comments.getList', query)
+            result += [ (args['photo_id'], item['author'], item['datecreate']) for item in response['comments']['comment'] ]
+
+        except KeyError as e:
+            print(e.message)
+            return []
+        except ValueError as e:
+            print(e.message)
+            return []
+
+        return list(set(result))
+
+   
     def groups_pools_getphotos(self, args):
 
         import copy
@@ -151,8 +177,50 @@ class FlickrAPI:
         
         return list(set(result))
 
+    
+    def people_getpublicphotos(self, args):
+        
+        import copy
+        query = copy.copy(self.query_template)
 
-    def contacts_get_public_list(self, args):
+        for k, v in args.items():
+            query.setdefault(k, str(v))
+
+        local_args = { 'perpage': '500', 'extras': 'date_upload,date_taken,last_update,views' }
+
+        for k, v in local_args.items():
+            if not k in query:
+                query.setdefault(k, str(v))
+        
+        result = []
+
+        page = 1
+        totalpage = None
+
+        while True:
+            try:
+                response = self.request('flickr.people.getPublicPhotos', query)
+                result += [ item['id'] for item in response['photos']['photo'] ]
+
+                if not totalpage:
+                    totalpage = int(response['photos']['pages'])
+            
+            except (KeyError, ValueError), inst:
+                print(inst)
+                return []
+            
+            page += 1
+
+            if page <= totalpage:
+                query['page'] = str(page)
+            else:
+                break
+        
+        return list(set(result))
+
+
+
+    def contacts_getpubliclist(self, args):
         
         import copy
         query = copy.copy(self.query_template)

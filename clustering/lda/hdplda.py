@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy
+import copy
 
 
 class HDPLDA:
@@ -58,7 +59,7 @@ class HDPLDA:
     def inference(self):
 
         for j, x_i in enumerate(self.x_ji):
-            if j % 1000 == 0: print('j: %d' % j)
+            if j % 10 == 0: print('j: %d' % j)
 
             for i in range(len(x_i)):
                 self.sampling_table(j, i)
@@ -66,9 +67,10 @@ class HDPLDA:
                 self.sampling_k(j, t)
 
     def worddist(self):
-        dist = numpy.array([(self.n_kv[k] + self.base) / (self.n_k[k] + self.Vbase) for k in self.topics])
-        dist /= dist.sum()
-        return dist
+        return [(self.n_kv[k] + self.base) / (self.n_k[k] + self.Vbase) for k in self.topics]
+        #dist = numpy.array([(self.n_kv[k] + self.base) / (self.n_k[k] + self.Vbase) for k in self.topics])
+        #dist /= dist.sum()
+        #return dist
 
     
     # internal methods from here
@@ -310,6 +312,7 @@ if __name__ == "__main__":
     
     import vocabulary
 
+    # Read corpus from file.
     if options.filename.split()[-1] == 'json':
         corpus = vocabulary.load_file_json(options.filename)
     else:
@@ -319,6 +322,8 @@ if __name__ == "__main__":
     voca = vocabulary.Vocabulary(options.stopwords==0)
     docs = [voca.doc_to_ids(doc) for doc in corpus]
 
+
+    # Running HDP-LDA.
     hdplda = HDPLDA(options.K, options.alpha, options.gamma, options.base, docs, voca.size())
 
     print("corpus=%d words=%d alpha=%f gamma=%f base=%f initK=%d stopwords=%d" % (len(corpus), len(voca.vocas), options.alpha, options.gamma, options.base, options.K, options.stopwords))
@@ -331,11 +336,39 @@ if __name__ == "__main__":
     print("K: %d\tPerplexity: %f" % (len(hdplda.topics), perp))
 
     phi = hdplda.worddist()
+    #phi = numpy.array( hdplda.worddist() )
+    #phi /= phi.sum()
 
-    with file(options.output, 'w') as opened:
+
+    word_phi_map = {}
+    # Write word-distribution for topics.
+    with file(options.output + '.worddist', 'w') as opened:
 
         for id in range(voca.size()):
             #term = voca.id_to_term(id)
-            buf = ' '.join([ str(phi_k[id]) for phi_k in phi ])
+            word_phi = numpy.array([ phi_k[id] for phi_k in phi ])
+            word_phi /= word_phi.sum()
+
+            word_phi_map[voca.id_to_term(id)] = copy.deepcopy(word_phi)
+
+            #buf = ' '.join([ str(phi_k[id]) for phi_k in phi ])
+            buf = ' '.join([ str(phi_k) for phi_k in word_phi ])
+            opened.write('%s %s\n' % (voca.id_to_term(id), buf))
+
+
+    # Write document-distribution for topics.
+    with file(options.output + '.docdist', 'w') as opened:
+
+        for j in corpus:
+            j_docdist = numpy.zeros(len(hdplda.topics), dtype = numpy.float64)
+
+            for term_id in j:
+                #j_docdist += numpy.array([ phi_k[term_id-1] for phi_k in phi ])
+                j_docdist += word_phi_map[term_id]
+
+            j_docdist /= j_docdist.sum()
+
+            #buf = ' '.join([ str(j_docdist[k]) for k in len(hdplda.topics) ])
+            buf = ' '.join([ str(j_docdist[k]) for k in range(len(hdplda.topics)) ])
             opened.write('%s\n' % buf)
 
