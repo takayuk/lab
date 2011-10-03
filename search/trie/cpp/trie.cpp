@@ -124,6 +124,21 @@ class Trie {
 
       vector<int> search_result;
 
+      const int term = query[query.size()-2];
+      const int end_term = query[query.size()-1];
+
+      int k = 0;
+      while (true) {
+        const int node = query[k];
+
+        vector<Element>::iterator n = find(g.begin(), g.end(), node);
+        if (n == g.end()) {
+          break;
+        }
+        
+        ++k;
+      }
+
       return search_result;
     }
 
