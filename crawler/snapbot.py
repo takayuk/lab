@@ -44,12 +44,31 @@ class Worker(threading.Thread):
 
             args = self._new_args()
 
-            with file(os.path.join(self.basedir, '%s.json' % (args[0])), 'w') as opened:
-                for args_photo in args[1]:
-                    response = self.api.call(method = self.method, args = { 'photo_id': args_photo })
+            #filepath = os.path.join(self.basedir, '%s.json' % args[0])
+            filepath = os.path.join(self.basedir, '%s.json' % args)
+
+            """
+            if not os.path.exists(filepath):
+                with file(filepath, 'w') as opened: pass
+            """
+            #for args_photo in args[1]:
+            for args_photo in args:
+                response = self.api.call(method = self.method, args = { 'photo_id': args })
+                #response = self.api.call(method = self.method, args = { 'user_id': args_photo })
+                """
+                with file(filepath, 'a') as opened:
                     opened.write('%s\n' % json.dumps(response))
-            print(args[0])
-            time.sleep(10.0)
+                """
+                with file(filepath, 'w') as opened:
+                    opened.write(json.dumps(response))
+            """
+            response = self.api.call(method = self.method, args = { 'user_id': args })
+            with file(filepath, 'w') as opened:
+                opened.write(json.dumps(response))
+            """ 
+            print(args)
+            time.sleep(0.1)
+
 
 class Snapbot():
     """ ネットワーク情報のスナップショットを取得するBot.
@@ -81,17 +100,21 @@ if __name__ == '__main__':
     #argslist = sorted([ l.strip().split()[2] for l in open(sys.argv[1]) ])
     argslist = []
     
-    pathlist = sorted(glob.glob('/home/takayuk/dataset/expdata/dataset/set1/photos_0-2/*.json'))[:10000]
+    pathlist = sorted(glob.glob('./temp/*.json'))
+
+    names = [ os.path.basename(path).split('.')[0] for path in glob.glob(sys.argv[2] + '/*.json') ]
+    table = dict(zip(names, [1] * len(names)))
+
     for i, path in enumerate(pathlist):
         name = os.path.basename(path).split('.')[0]
-        photos = json.load(open(path))
 
-        argslist.append((name, photos))
-
-    #print(argslist[:3])
-
-    print(len(argslist))
-
+        with file(path) as opened:
+            for j, line in enumerate(opened):
+                argslist += [ id for id in json.loads(line) if not id in table ]
+                #photos = json.loads(line)
+                #argslist += [ v[1] for v in photos ]
+    argslist = list(set(argslist))
+    
     method = sys.argv[3]
     bot = Snapbot(method, argslist, numof_thread = int(sys.argv[4]), output_dir = sys.argv[2])
     bot.run()

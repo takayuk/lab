@@ -56,13 +56,12 @@ class FlickrAPI:
 
         try:
             response = self.request('flickr.photos.comments.getList', query)
-            result += [ (args['photo_id'], item['author'], item['datecreate']) for item in response['comments']['comment'] ]
+            #result += [ (args['photo_id'], item['author'], item['datecreate']) for item in response['comments']['comment'] ]
+            result += [ (item['author'], item['datecreate']) for item in response['comments']['comment'] ]
 
         except KeyError as e:
-            print(e.message)
             return []
         except ValueError as e:
-            print(e.message)
             return []
 
         return list(set(result))
