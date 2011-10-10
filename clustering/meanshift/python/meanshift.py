@@ -46,11 +46,9 @@ def mp_meanshift(table, segment, dataset):
             nsum = zeros(K)
             div = 0
             for j in range(len(dataset)):
+                
                 dist = math.sqrt( sum([ (dataset[j][k] - mean[k]) ** 2 for k in range(K) ]) )
-               
-                # Use Specified-kernel.
-                #if dist <= kernel_width:
-                if dist <= kernel_width and (dataset[j][K-1] - mean[K-1])**2 <= options.sks:
+                if dist <= kernel_width:
                     nsum += array(dataset[j])
                     div += 1
 
@@ -128,8 +126,6 @@ def args():
     parser.add_option('-o', dest = 'output_path', default = '')
     
     
-    parser.add_option('--sks', dest = 'sks', default = '100.0')
-
     (opts, args) = parser.parse_args()
 
     if not opts.output_path:

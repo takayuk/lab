@@ -66,8 +66,8 @@ class Worker(threading.Thread):
             with file(filepath, 'w') as opened:
                 opened.write(json.dumps(response))
             """ 
-            print(args)
-            time.sleep(0.1)
+            print(len(self.args_list))
+            time.sleep(0.05)
 
 
 class Snapbot():
@@ -95,11 +95,33 @@ class Snapbot():
             worker.join()
 
 
+def args():
+
+    script_usage = 'Usage: python %s [options]\n\t-f <path to dataset>\n\t-m <API method>\n\t--np <threads>\n\t-o <path to output>' % sys.argv[0]
+
+    import optparse
+    parser = optparse.OptionParser(usage = script_usage)
+    parser.add_option('-f', '--file', dest = 'filename')
+    parser.add_option('-m', '--method', dest = 'api_method')
+    parser.add_option('--np', dest = 'threads', type = 'int', default = 1)
+    parser.add_option('-o', dest = 'basedir', default = '.')
+
+    (opts, args) = parser.parse_args()
+
+    if not (opts.filename and opts.basedir):
+        parser.error(script_usage)
+
+    return (opts, args)
+
+
+
 if __name__ == '__main__':
 
-    #argslist = sorted([ l.strip().split()[2] for l in open(sys.argv[1]) ])
-    argslist = []
+    (options, args) = args()
     
+    argslist = json.load(open(options.filename))
+
+    """
     pathlist = sorted(glob.glob('./temp/*.json'))
 
     names = [ os.path.basename(path).split('.')[0] for path in glob.glob(sys.argv[2] + '/*.json') ]
@@ -114,8 +136,16 @@ if __name__ == '__main__':
                 #photos = json.loads(line)
                 #argslist += [ v[1] for v in photos ]
     argslist = list(set(argslist))
+
+    size = 10000
+    div_argslist = [ argslist[i:i+size] for i in range(0, len(argslist), size) ]
+    print(len(div_argslist))
+    for i, div in enumerate(div_argslist):
+        with file('div_argslist_%d.json' % i, 'w') as opened:
+            opened.write(json.dumps(div))
+    exit()
+    """
     
-    method = sys.argv[3]
-    bot = Snapbot(method, argslist, numof_thread = int(sys.argv[4]), output_dir = sys.argv[2])
+    bot = Snapbot(options.api_method, argslist, numof_thread = options.threads, output_dir = options.basedir)
     bot.run()
 
