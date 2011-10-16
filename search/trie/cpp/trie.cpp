@@ -17,16 +17,31 @@ class Node {
     bool is_value;
     vector<int> docids;
 
-    Node(const int& label, bool is_value): label(label), is_value(is_value) {}
-    Node(const int& label): label(label) {
+    int bros_;
+
+    /// Specified Label, BrosID, is-Value? .
+    //Node(const int& label, bool is_value): label(label), is_value(is_value) {}
+    Node(const int& label, const int& bros, bool is_value): label(label), bros_(bros), is_value(is_value) {}
+   
+    /// Specified Label only.
+    //Node(const int& label): label(label) {
+    Node(const int& label, const int& bros): label(label), bros_(bros) {
       is_value = false;
     }
-    Node(const int& label, const int& doc_id): label(label) {
+
+    /// Specified Label, DocID.
+    //Node(const int& label, const int& doc_id): label(label), is_value(true) {
+    Node(const int& label, const int& bros, const int& doc_id): label(label), bros_(bros), is_value(true) {
       docids.push_back(doc_id);
     }
+
     ~Node() {}
 
     bool operator==(const int& label) { return this->label == label; }
+    bool operator==(const Node& lhs) {
+      return (this->label == lhs.label) && (this->bros_ == lhs.bros_);
+    }
+    
     bool operator!=(const int& label) { return this->label != label; }
 };
 
@@ -44,6 +59,9 @@ class Element {
     ~Element() {}
 
     bool operator==(const int& label) { return this->node.label == label; }
+    bool operator==(const Element& lhs) {
+      return (this->node.label == lhs.node.label) && (this->node.bros_ == lhs.node.bros_);
+    }
 };
 
 
@@ -52,14 +70,80 @@ class Trie {
   public:
     vector<Element> g;
 
+
+    void build_testing(const vector<int>& keys, const int& doc_id) {
+
+      /// Regist Elements.
+      for (int i = 0; i < keys.size(); ++i) {
+        
+        const int term = keys[i];
+        int prev_term;
+        if (i == 0) { prev_term = 0; }
+        else { prev_term = keys[i-1]; }
+
+        Element e( Node(term, prev_term) );
+        vector<Element>::iterator elem = find(g.begin(), g.end(), e);
+        if (elem == g.end()) {
+          g.push_back(e);
+        }
+      }
+
+      /// Regist child node.
+      for (int i = 0; i < keys.size()-1; ++i) {
+        
+        const int term = keys[i];
+        const int next_term = keys[i+1];
+        int prev_term;
+        if (i == 0) { prev_term = 0; }
+        else { prev_term = keys[i-1]; }
+
+        Element e( Node(term, prev_term) );
+
+        vector<Element>::iterator elem = find(g.begin(), g.end(), e);
+
+        vector<Node>::iterator child = find(elem->child.begin(), elem->child.end(), next_term);
+        if (child == elem->child.end()) {
+          elem->child.push_back( Node(next_term, prev_term) );
+        }
+      }
+
+      const int term = keys[keys.size()-1];
+      const int prev_term = keys[keys.size()-2];
+
+      Element e( Node(term, prev_term) );
+      vector<Element>::iterator elem = find(g.begin(), g.end(), e);
+      
+      vector<Node>::iterator nd = find(elem->child.begin(), elem->child.end(), term);
+
+      //nd->docids.push_back(doc_id);
+
+      /*
+      const int t = keys[keys.size()-2];
+      const int nt = keys[keys.size()-1];
+
+      vector<Element>::iterator elem = find(g.begin(), g.end(), t);
+      vector<Node>::iterator nd = find(elem->child.begin(), elem->child.end(), nt);
+      nd->docids.push_back(doc_id);
+      */
+ 
+    }
+
     void build(const vector<int>& keys, const int& doc_id) {
 
       for (int i = 0; i < keys.size(); ++i) {
 
         const int term = keys[i];
+
         vector<Element>::iterator elem = find(g.begin(), g.end(), term);
         if (elem == g.end()) {
-          g.push_back( Element(Node(term)) );
+          
+          //g.push_back( Element(Node(term)) );
+          if (i == 0) {
+            g.push_back( Element(Node(term, 0)) );
+          }
+          else {
+            g.push_back( Element(Node(term, keys[i-1])) );
+          }
         }
       }
 
@@ -73,7 +157,14 @@ class Trie {
 
         vector<Node>::iterator child = find(elem->child.begin(), elem->child.end(), next_term);
         if (child == elem->child.end()) {
-          elem->child.push_back( Node(next_term) );
+          
+          //elem->child.push_back( Node(next_term) );
+          if (i == 0) {
+            elem->child.push_back( Node(next_term, 0) );
+          }
+          else {
+            elem->child.push_back( Node(next_term, keys[i-1]) );
+          }
         }
       }
 
@@ -83,40 +174,6 @@ class Trie {
       vector<Element>::iterator elem = find(g.begin(), g.end(), t);
       vector<Node>::iterator nd = find(elem->child.begin(), elem->child.end(), nt);
       nd->docids.push_back(doc_id);
-      /*
-      for (int i = 0; i < keys.size()-1; ++i) {
-
-        const bool end_of_document = (i+1) == (keys.size()-1) ? true:false;
-        
-        const int term = keys[i];
-        const int next_term = keys[i+1];
-
-        vector<Element>::iterator elem = find(g.begin(), g.end(), term);
-        if (elem != g.end()) {
-          
-          vector<Node>::iterator child = find(elem->child.begin(), elem->child.end(), next_term);
-          if (child == elem->child.end()) {
-            if (end_of_document) {
-              
-              elem->child.push_back( Node(next_term, doc_id) );
-              elem->node.docids.push_back(doc_id);
-            }
-            else {
-              elem->child.push_back( Node(next_term) );
-            }
-          }
-        }
-        else {
-          if (end_of_document) {
-            g.push_back( Element(Node(term), Node(next_term)) );
-            g.push_back( Element(Node(next_term, doc_id)) );
-          }
-          else {
-            g.push_back( Element(Node(term), Node(next_term)) );
-          }
-        }
-      }
-      */
     }
 
 
@@ -141,43 +198,6 @@ class Trie {
 
       return search_result;
     }
-
-
-    /*
-    bool search(const vector<int>& query) {
-
-      //vector<Element>::iterator i = g.begin();
-      
-      //vector<Node>::iterator current_node = g.end()->child.end();
-
-      vector<Node>::iterator find_result;
-
-      for (int k = 0; k < query.size()-1; ++k) {
-
-        //i = g.begin();
-        for (vector<Element>::iterator i = g.begin(); i != g.end(); ++i) {
-
-        //vector<Element>::iterator i = g.begin();
-        //while (i != g.end()) {
-          if (i->node.label == query[k]) {
-            printf("F\n");
-            find_result = find(i->child.begin(), i->child.end(), query[k+1]);
-            //if (find_result == i->child.end()) {
-            if (k < query.size()-1 && find_result == i->child.end()) {
-              return false;
-            }
-          }
-
-          //find_result = find(i->child.begin(), i->child.end(), query[k]);
-          //find_result = find(i->child.begin(), i->child.end(), query[k+1]);
-          //++i;
-        }
-        //find_result = find(i->child.begin(), i->child.end(), query[k+1]);
-      }
-      return true;
-      //return found;
-    }
-    */
 };
 
 
@@ -221,8 +241,8 @@ int main(int argc, char* argv[]) {
 
   int doc_id = 0;
   for (vector< vector<int> >::iterator i = dataset.begin(); i != dataset.end(); ++i) {
-    //trie.build(*i);
-    trie.build(*i, doc_id);
+    //trie.build(*i, doc_id);
+    trie.build_testing(*i, doc_id);
     doc_id++;
   }
 
@@ -230,6 +250,8 @@ int main(int argc, char* argv[]) {
   for (vector<Element>::iterator i = trie.g.begin(); i != trie.g.end(); ++i) {
 
     printf("%d\t", i->node.label);
+
+    printf("__%d__", i->node.bros_);
 
     for (vector<Node>::iterator c = i->child.begin(); c != i->child.end(); ++c) {
       printf("%d ", (*c).label);
@@ -242,24 +264,6 @@ int main(int argc, char* argv[]) {
     }
     printf("\n");
   }
-
-  /*
-  vector<int> query;
-  query.push_back(2);
-  query.push_back(4);
-
-  const bool result = trie.search(query);
-  if (result) { printf("Found.\n"); }
-  else { printf("Not found.\n"); }
-
-  query.clear();
-  query.push_back(26);
-  query.push_back(12);
-  query.push_back(13);
-  
-  if (result) { printf("Found.\n"); }
-  else { printf("Not found.\n"); }
-  */
 
   return 0;
 }
