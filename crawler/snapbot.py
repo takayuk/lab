@@ -5,7 +5,7 @@
 import sys, os
 sys.path.append(os.path.dirname(sys.argv[0]))
 
-import flickr_callapi
+import flickr_api
 #import twitter
 
 import threading
@@ -44,29 +44,15 @@ class Worker(threading.Thread):
 
             args = self._new_args()
 
-            #filepath = os.path.join(self.basedir, '%s.json' % args[0])
             filepath = os.path.join(self.basedir, '%s.json' % args)
 
-            """
-            if not os.path.exists(filepath):
-                with file(filepath, 'w') as opened: pass
-            """
-            #for args_photo in args[1]:
             for args_photo in args:
-                response = self.api.call(method = self.method, args = { 'photo_id': args })
-                #response = self.api.call(method = self.method, args = { 'user_id': args_photo })
-                """
-                with file(filepath, 'a') as opened:
-                    opened.write('%s\n' % json.dumps(response))
-                """
+                response = self.api.call(method = self.method, args = args)
+                #response = self.api.call(method = self.method, args = { 'user_id': args })
+                #response = self.api.call(method = self.method, args = { 'photo_id': args })
                 with file(filepath, 'w') as opened:
                     opened.write(json.dumps(response))
-            """
-            response = self.api.call(method = self.method, args = { 'user_id': args })
-            with file(filepath, 'w') as opened:
-                opened.write(json.dumps(response))
-            """ 
-            print(len(self.args_list))
+            
             time.sleep(0.05)
 
 
@@ -118,33 +104,8 @@ def args():
 if __name__ == '__main__':
 
     (options, args) = args()
-    
+ 
     argslist = json.load(open(options.filename))
-
-    """
-    pathlist = sorted(glob.glob('./temp/*.json'))
-
-    names = [ os.path.basename(path).split('.')[0] for path in glob.glob(sys.argv[2] + '/*.json') ]
-    table = dict(zip(names, [1] * len(names)))
-
-    for i, path in enumerate(pathlist):
-        name = os.path.basename(path).split('.')[0]
-
-        with file(path) as opened:
-            for j, line in enumerate(opened):
-                argslist += [ id for id in json.loads(line) if not id in table ]
-                #photos = json.loads(line)
-                #argslist += [ v[1] for v in photos ]
-    argslist = list(set(argslist))
-
-    size = 10000
-    div_argslist = [ argslist[i:i+size] for i in range(0, len(argslist), size) ]
-    print(len(div_argslist))
-    for i, div in enumerate(div_argslist):
-        with file('div_argslist_%d.json' % i, 'w') as opened:
-            opened.write(json.dumps(div))
-    exit()
-    """
     
     bot = Snapbot(options.api_method, argslist, numof_thread = options.threads, output_dir = options.basedir)
     bot.run()

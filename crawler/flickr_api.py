@@ -8,12 +8,15 @@ sys.path.append(os.path.dirname(sys.argv[0]))
 import json
 import cgi, urllib
 
+import copy
+
 
 class FlickrAPI:
 
     def __init__(self, api_key = 'flickr_api'):
 
         self.method_map = {
+            'flickr.photos.getInfo': self.photos_getinfo,
             'flickr.people.getPublicPhotos': self.people_getpublicphotos,
             'flickr.people.getPublicGroups': self.people_getpublicgroups,
             'flickr.contacts.getPublicList': self.contacts_getpubliclist,
@@ -23,8 +26,9 @@ class FlickrAPI:
         }
         self.query_template = { 'format': 'json', 'nojsoncallback': '1' }
         
-        from pit import Pit
-        self.api = Pit.get(api_key)
+        #from pit import Pit
+        #self.api = Pit.get(api_key)
+        self.api = { 'key': '8cc9b4664c0c9ee5cfc10cadbfd2ac87' }
 
 
     def request(self, method, args_map): 
@@ -44,6 +48,23 @@ class FlickrAPI:
         return call_method(args)
     
         
+    def photos_getinfo(self, args):
+        
+        query = copy.copy(self.query_template)
+
+        for k, v in args.items():
+            query.setdefault(k, str(v))
+
+        try:
+            response = self.request('flickr.photos.getInfo', query)
+            return response['photo']['owner']
+
+        except KeyError as e:
+            return None
+        except ValueError as e:
+            return None
+
+
     def photos_comments_getlist(self, args):
         
         import copy
@@ -56,8 +77,8 @@ class FlickrAPI:
 
         try:
             response = self.request('flickr.photos.comments.getList', query)
-            #result += [ (args['photo_id'], item['author'], item['datecreate']) for item in response['comments']['comment'] ]
-            result += [ (item['author'], item['datecreate']) for item in response['comments']['comment'] ]
+            result += [ (args['photo_id'], item['author'], item['datecreate']) for item in response['comments']['comment'] ]
+            #result += [ (item['author'], item['datecreate']) for item in response['comments']['comment'] ]
 
         except KeyError as e:
             return []
@@ -199,13 +220,13 @@ class FlickrAPI:
         while True:
             try:
                 response = self.request('flickr.people.getPublicPhotos', query)
-                result += [ item['id'] for item in response['photos']['photo'] ]
+                result += [ (item['id'], item['dateupload']) for item in response['photos']['photo'] ]
 
                 if not totalpage:
                     totalpage = int(response['photos']['pages'])
             
             except (KeyError, ValueError), inst:
-                print(inst)
+                #print(inst)
                 return []
             
             page += 1
