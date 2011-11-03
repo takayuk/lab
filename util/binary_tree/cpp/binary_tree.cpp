@@ -1,77 +1,76 @@
 #include <vector>
-#include <cstdio>
+#include <iostream>
 
 
-using namespace std;
-
-const int N = 10;
-
-
-class Node {
+template <typename T>
+class Element {
 
   public:
-    int id;
-    Node(const int& id): id(id) {}
-    Node(): id(-1) {}
-};
+    Element(): data(0), left(-1), right(-1) {}
+    Element(const T& data): data(data), left(-1), right(-1) {}
+    ~Element() {}
 
+    const T& node() const { return this->data; }
 
-class Elem {
-
-  public:
-
-    Node node;
+    void operator=(const T& data) { this->data = data; }
+  
     int left;
     int right;
-
-    Elem(const Node& node): node(node), left(-1), right(-1) {}
-    Elem(): node(Node()), left(-1), right(-1) {}
+  
+  private:
+    T data;
 };
 
 
-void binary_tree() {
+void build() {
 
-  vector<Node> nodelist;
-  vector<Elem> elem(N);
+  using namespace std;
 
-  for (int i = 0; i < N; ++i) {
-    nodelist.push_back(Node(i));
-  }
+  int data[] = { 2, 5, 6, 4, 8, 1, 9, 3, 4, 7 };
 
-  int root = 0;
-  elem[root] = nodelist[0];
-  
-  for (int i = 1; i < N; ++i) {
+  vector< Element<int> > tree(10);
 
-    Node n = nodelist[i];
-    int current = root;
-    
+  int sp = -1;
+  int empty_index = sp + 1;
+
+  tree[0] = data[0];
+  for (int i = 1; i < 10; ++i) {
+    tree[i] = data[i];
+
+    int current = 0;
     while (true) {
 
-      if (n.id <= elem[current].node.id) {
-        current = elem[current].left;
+      int next = -1;
+      if (data[i] < tree[current].node()) {
+        next = tree[current].left;
+
+        if (next < 0) {
+          tree[current].left = i;
+          break;
+        }
       }
       else {
-        current = elem[current].right;
+        next = tree[current].right;
+
+        if (next < 0) {
+          tree[current].right = i;
+          break;
+        }
       }
-      
-      if (elem[current].left < 0 && elem[current].right < 0) {
-        elem[current].right = i;
-        break;
-      }
+      current = next;
     }
   }
 
-  for (int i = 0; i < N; ++i) {
-    printf("%d --> %d, %d\n", elem[i].node.id, elem[i].left, elem[i].right);
+  for (vector< Element<int> >::iterator i = tree.begin(); i != tree.end(); ++i) {
+
+    cout << i->node() << " --> " << tree[i->left].node() << ", " << tree[i->right].node() << endl;
   }
 }
 
 
 int main(int argc, char* argv[]) {
 
-  binary_tree();
+  build();
 
   return 0;
 }
-
