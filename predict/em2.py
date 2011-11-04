@@ -24,6 +24,135 @@ EPS = 1.0e-6
 EM_EPS = 1.0e-3
 
 
+def map_estimator3(n_z, train):
+    
+    K = len(n_z[0])
+
+    #_beta = numpy.ones(K) / K
+    _beta2 = numpy.ones((K, K)) / K
+
+    #gamma_table = {}
+    gamma_table2 = {}
+    
+    while True:
+        for link in train:
+
+            #if not link in gamma_table:
+            if not link in gamma_table2:
+                #gamma_table[link] = numpy.zeros(K, dtype = float)
+                gamma_table2[link] = numpy.zeros((K, K), dtype = numpy.float64)
+
+            #gamma_bunbo = sum([ _beta[k] * n_z[link[0]][k] * n_z[link[1]][k] for k in range(K) ])
+            gamma_bunbo2 = 0
+            for k in range(K):
+                for l in range(K):
+                    gamma_bunbo2 += _beta2[k][l] * n_z[link[0]][k] * n_z[link[1]][l]
+
+            for k in range(K):
+                for l in range(K):
+                    try:
+                        gamma_table2[link][k][l] = (_beta2[k][l] * n_z[link[0]][k] * n_z[link[1]][l]) / gamma_bunbo2
+                    except ZeroDivisionError:
+                        gamma_bunbo2 = EPS
+                        gamma_table2[link][k][l] = (_beta2[k][l] * n_z[link[0]][k] * n_z[link[1]][l]) / gamma_bunbo2
+            """
+            for k in range(K):
+                try:
+                    gamma_table[link][k] = (_beta[k] * n_z[link[0]][k] * n_z[link[1]][k]) / gamma_bunbo
+                except ZeroDivisionError:
+                    gamma_bunbo = EPS
+                    gamma_table[link][k] = (_beta[k] * n_z[link[0]][k] * n_z[link[1]][k]) / gamma_bunbo
+            """
+        
+        #_new_beta = numpy.zeros(K, dtype = float)
+        _new_beta2 = numpy.zeros((K, K), dtype = numpy.float64)
+        for k in range(K):
+            for l in range(K):
+                _new_beta_bunbo = sum([ gamma_table2[t].sum() for t in train ])
+                _new_beta_bunshi = sum([ gamma_table2[t][k][l] for t in train ])
+
+                try:
+                    _new_beta2[k][l] = _new_beta_bunshi / _new_beta_bunbo
+                except ZeroDivisionError:
+                    _new_beta_bunbo = EPS
+                    _new_beta2[k][l] = _new_beta_bunshi / _new_beta_bunbo
+
+        _new_beta2 /= _new_beta2.sum()
+        
+        q = 0.0
+        for link in train:
+            #bunshi = sum([ _new_beta[k] * n_z[link[0]][k] * n_z[link[1]][k] for k in range(K) ])
+            bunshi = 0
+            for k in range(K):
+                for l in range(K):
+                    bunshi += _new_beta2[k][l] * n_z[link[0]][k] * n_z[link[1]][l]
+
+            #bunbo = sum([ _beta[k] * n_z[link[0]][k] * n_z[link[1]][k] for k in range(K) ])
+            bunbo = 0
+            for k in range(K):
+                for l in range(K):
+                    bunbo += _beta2[k][l] * n_z[link[0]][k] * n_z[link[1]][l]
+
+            q += math.log(bunshi / bunbo)
+
+        for k in range(K): _beta2[k] = _new_beta2[k]
+        
+        if q < EM_EPS: break
+        print(q)
+
+    return _beta2
+
+
+
+def map_estimator2(n_z, train):
+    
+    K = len(n_z[0])
+
+    _beta = numpy.ones(K) / K
+
+    gamma_table = {}
+    
+    while True:
+        for link in train:
+
+            if not link in gamma_table:
+                gamma_table[link] = numpy.zeros(K, dtype = float)
+
+            gamma_bunbo = sum([ _beta[k] * n_z[link[0]][k] * n_z[link[1]][k] for k in range(K) ])
+
+            for k in range(K):
+                try:
+                    gamma_table[link][k] = (_beta[k] * n_z[link[0]][k] * n_z[link[1]][k]) / gamma_bunbo
+                except ZeroDivisionError:
+                    gamma_bunbo = EPS
+                    gamma_table[link][k] = (_beta[k] * n_z[link[0]][k] * n_z[link[1]][k]) / gamma_bunbo
+
+        _new_beta = numpy.zeros(K, dtype = float)
+        for k in range(K):
+            _new_beta_bunbo = sum([ gamma_table[t].sum() for t in train ])
+            _new_beta_bunshi = sum([ gamma_table[t][k] for t in train ])
+
+            try:
+                _new_beta[k] = _new_beta_bunshi / _new_beta_bunbo
+            except ZeroDivisionError:
+                _new_beta_bunbo = EPS
+                _new_beta[k] = _new_beta_bunshi / _new_beta_bunbo
+
+        _new_beta /= _new_beta.sum()
+        
+        q = 0.0
+        for link in train:
+            q += math.log(sum([ _new_beta[k] * n_z[link[0]][k] * n_z[link[1]][k] for k in range(K) ]) / sum([ _beta[k] * n_z[link[0]][k] * n_z[link[1]][k] for k in range(K) ]))
+
+        for k in range(K): _beta[k] = _new_beta[k]
+        
+        if q < EM_EPS: break
+        #print(q)
+
+    return _beta
+
+
+    
 def map_estimator():
    
     numpy.random.seed(options.rseed)
@@ -79,11 +208,17 @@ def map_estimator():
         print(q)
 
     print('done...')
-    
+    print(_beta)
+
+    with file(options.output_path + '.estimated', 'w') as opened:
+        opened.write(json.dumps(list(_beta)))
+    print(options.output_path + '.estimated')
+
     #sim = similarity.cosine(_beta, beta)
     #sim = similarity.kldivergence(beta, _beta)
     #print(sim)
 
+    """
     # Laplace smoothing.
     _beta += 0.5
     #_beta += 0.1
@@ -115,6 +250,7 @@ def map_estimator():
     #sim_geta = similarity.cosine(_beta, beta)
     #sim_geta = similarity.kldivergence(beta, _beta)
     #print(sim_geta)
+    """
 
 
 def args():
