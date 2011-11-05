@@ -16,10 +16,34 @@ hiragana = re.compile( u'[\u3041-\u309f]' )
 
 gram_table = {}
 
+
+def cutout(sentence, delim = ' '):
+    return [ word for word in re.sub(hiragana, ' ', sentence).split(delim) if len(word) > 0 ]
+
+
+
+def unigram():
+
+term_to_id = {}
+
 with file(sys.argv[1]) as opened:
 
     for j, line in enumerate(opened):
+
+        token = cutout( re.sub(kigou, ' ', unicode(line)) )
+
         
+        for term in token:
+            if not term_to_id.get(term):
+                term_to_id[term] = len(term_to_id)
+
+        docids = [ term_to_id[term] for term in token ]
+        print(term_to_id)
+        
+        print(docids)
+        
+        print(unicode(line))
+        break
         bigram = []
         doc = re.sub(kigou, '', unicode(line))
         
@@ -33,7 +57,8 @@ with file(sys.argv[1]) as opened:
             except KeyError:
                 gram_table[gram] = 1
 
-        print(j)
+
+exit()
 
 print(len(gram_table))
 
