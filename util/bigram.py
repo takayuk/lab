@@ -22,7 +22,6 @@ def cutout(sentence, delim = ' '):
 
 
 
-def unigram():
 
 term_to_id = {}
 
@@ -30,8 +29,7 @@ with file(sys.argv[1]) as opened:
 
     for j, line in enumerate(opened):
 
-        token = cutout( re.sub(kigou, ' ', unicode(line)) )
-
+        token = cutout( re.sub(kigou, ' ', unicode(line, 'utf-8')) )
         
         for term in token:
             if not term_to_id.get(term):
@@ -41,9 +39,7 @@ with file(sys.argv[1]) as opened:
         print(term_to_id)
         
         print(docids)
-        
-        print(unicode(line))
-        break
+        """
         bigram = []
         doc = re.sub(kigou, '', unicode(line))
         
@@ -57,6 +53,7 @@ with file(sys.argv[1]) as opened:
             except KeyError:
                 gram_table[gram] = 1
 
+        """
 
 exit()
 

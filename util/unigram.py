@@ -31,17 +31,21 @@ with file(sys.argv[1]) as opened:
 
     for j, line in enumerate(opened):
 
-        print(unicode(line))
-        result = bow.bagofwords(sentence = unicode(line), target_feature = ["名詞", "未知語"])
+	"""
+        result = bow.bagofwords(sentence = unicode(line, 'utf-8'), target_feature = ["名詞", "未知語"])
         for v in result:
             print(v[0])
 
+	print('done')
         break
+	"""
+        
+	token = cutoff( hiragana, re.sub(kigou, ' ', unicode(line, 'utf-8')) )
+	if len(token) > 0:
+		print(line)
+        #print(' '.join(token))
 
-        token = cutout( hiragana, re.sub(kigou, ' ', unicode(line)) )
-        print(' '.join(token))
-        break
-
+	"""
         for term in token:
             id = term_to_id.get(term)
             if not id:
@@ -54,8 +58,9 @@ with file(sys.argv[1]) as opened:
         #print(' '.join(token))
         corpus.append(docids)
 
-print(len(term_to_id))
-print(len(corpus))
+	"""
+#print(len(term_to_id))
+#print(len(corpus))
 exit()
 
 print(len(gram_table))
